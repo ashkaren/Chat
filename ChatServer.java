@@ -1,0 +1,65 @@
+/*
+CS4345 
+Spring 2016
+Program 3
+Gennady Evtodiev
+Fiifi Smith Quayson
+Akshay Patel
+*/
+
+
+import java.net.*;
+import java.io.*;
+import java.util.*;
+
+public class ChatServer
+
+{
+	public static ArrayList<Socket> ConnectionArray = new ArrayList<Socket>(); //placeholder for socket connections
+	public static ArrayList<String> CurrentUsersArray = new ArrayList<String>(); //placeholder for users
+
+	public static void main(String[] args) throws IOException
+	{
+		try
+		{
+			final int PORT = 7000;
+			ServerSocket SERVER = new ServerSocket(PORT); //extanciate SERVER socket on port 7000
+			System.out.println("Waiting for clients to connect...");
+
+			while(true)
+			{
+				Socket SOCK = SERVER.accept(); //return value of SERVER socket will be assigned to SOCK
+				ConnectionArray.add(SOCK); //adding SOCK, so while iterating through array list we can copy msg to all users
+				System.out.println("Client " + SOCK.getLocalAddress().getHostName() + "connected");
+
+				AddUser(SOCK);
+				//we building ChatServer_Class return object and pass SOCK (every connection to it)
+				ChatServer_Class CHAT = new ChatServer_Class(SOCK);
+				//every passed constructor as an argument will start in its own thread
+				Thread A = new Thread(CHAT);
+				A.start();
+			}
+
+		}
+		catch(Exception A)
+		{
+			System.out.println(A);
+		}
+	}
+	//adding users who is online to array list of connected users
+	public static void AddUser(Socket A) throws IOException
+	{
+		Scanner input = new Scanner(A.getInputStream()); //every connection send out to server as input
+		String userName = input.nextLine(); 
+		CurrentUsersArray.add(userName); //added to array list
+
+		//sending out connected Users to let everybody know who is connected
+		for(int i = 1; i <= ChatServer.ConnectionArray.size(); i++)
+		{
+			Socket TEMP_SOCK = (Socket) ChatServer.ConnectionArray.get(i-1); //getting array list of objects one by one
+			PrintWriter out = new PrintWriter(TEMP_SOCK.getOutputStream());
+			out.println("#" + CurrentUsersArray); //sending out whole array list of users
+			out.flush();
+		}
+	}
+}
